@@ -6,7 +6,7 @@ import socket
 import datetime
 
 from elasticsearch import Elasticsearch
-from elasticmonitor import helpers
+# from elasticmonitor import helpers
 
 def collect_cpu_stats():
     times = psutil.cpu_times()
@@ -50,24 +50,24 @@ def collect_ram_stats():
 
     data = {
         "system_memory": {
-            "total":        helpers.bytes2human(system_memory.total),
-            "available":    helpers.bytes2human(system_memory.available),
+            "total":        system_memory.total,
+            "available":    system_memory.available,
             "percent":      system_memory.percent,
-            "used":         helpers.bytes2human(system_memory.used),
-            "free":         helpers.bytes2human(system_memory.free),
-            "active":       helpers.bytes2human(system_memory.active),
-            "inactive":     helpers.bytes2human(system_memory.inactive),
-            "buffers":      helpers.bytes2human(system_memory.buffers),
-            "cached":       helpers.bytes2human(system_memory.cached)
+            "used":         system_memory.used,
+            "free":         system_memory.free,
+            "active":       system_memory.active,
+            "inactive":     system_memory.inactive,
+            "buffers":      system_memory.buffers,
+            "cached":       system_memory.cached
         },
 
         "swap_memory": {
-            "total":    helpers.bytes2human(swap_memory.total),
-            "used":     helpers.bytes2human(swap_memory.used),
-            "free":     helpers.bytes2human(swap_memory.free),
+            "total":    swap_memory.total,
+            "used":     swap_memory.used,
+            "free":     swap_memory.free,
             "percent":  swap_memory.percent,
-            "sin":      helpers.bytes2human(swap_memory.sin),
-            "sout":     helpers.bytes2human(swap_memory.sout)
+            "sin":      swap_memory.sin,
+            "sout":     swap_memory.sout
         }
     }
 
@@ -77,15 +77,14 @@ def collect_dsk_stats():
     disks = []
 
     for partition in psutil.disk_partitions():
-        # disks["disks"].append({partition.device:partition.mountpoint: psutil.disk_usage})
         usage = psutil.disk_usage(partition.mountpoint)
 
         disks.append({
-            partition.device: {
-                partition.mountpoint: {
-                        "total":    helpers.bytes2human(usage.total),
-                        "used":     helpers.bytes2human(usage.used),
-                        "free":     helpers.bytes2human(usage.free),
+            partition.device.replace('/', '_'): {
+                partition.mountpoint.replace('/', '_'): {
+                        "total":    usage.total,
+                        "used":     usage.used,
+                        "free":     usage.free,
                         "percent":  usage.percent
                     }
                 }
@@ -111,4 +110,4 @@ def go(configuration):
         "disk":         collect_dsk_stats() 
     }
 
-    return push_to_es(config['ElasticSearch'], data, id="{0}_{1}".format(data['server'], now.strftime('%Y%m%d-%H.%M.%S')))
+    return push_to_es(config['ElasticSearch'], data, id="{0}_{1}".format(data['server'], now.strftime('%Y%m%d-%H.%M')))
