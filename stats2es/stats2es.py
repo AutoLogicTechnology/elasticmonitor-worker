@@ -1,11 +1,11 @@
 
 import yaml
-import elasticsearch
 import psutil
 import json
 import socket
-import requests
 import datetime
+
+from elasticsearch import Elasticsearch
 
 def collect_cpu_stats():
     times = psutil.cpu_times()
@@ -93,8 +93,9 @@ def collect_dsk_stats():
     return disks 
 
 def push_to_es(server, data, id):
-    url = "{0}:{1}/{2}/{3}/{4}".format(server['Host'], server['Port'], server['Index'], server['ObjectType'], id)
-    return requests.post(url, data=data, verify=False).status_code
+    es = Elasticsearch([{'host': server['Host'], 'port': server['Port']}])
+    es.indices.create(server['Index'], ignore=400)
+    return es.index(index=server['Index'], doc_type=server['DocType'], id=id, body=data)
 
 def bytes2human(n):
     # http://code.activestate.com/recipes/578019
@@ -113,15 +114,17 @@ def bytes2human(n):
     return "%sB" % n
 
 def go(configuration):
-    config = yaml.load(open(configuration))
+    with open(configuration) as fd:
+        config = yaml.load(fd)
+
     now = datetime.datetime.now()
 
     data = {
         "timestamp":    str(now),
         "server":       socket.gethostname(),
-        "cpu":          collect_cpu_stats, 
-        "ram":          collect_ram_stats,
-        "disk":         collect_dsk_stats 
+        "cpu":          collect_cpu_stats(), 
+        "ram":          collect_ram_stats(),
+        "disk":         collect_dsk_stats() 
     }
 
-    return push_to_es(config['ElasticSearch'], data, id="{0}_{1}".format(me, now.strftime('%Y%m%d-%H.%M.%S')))
+    return push_to_es(config['ElasticSearch'], data, id="{0}_{1}".format(data['server'], now.strftime('%Y%m%d-%H.%M.%S')))
