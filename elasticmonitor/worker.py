@@ -6,6 +6,7 @@ import socket
 import datetime
 
 from elasticsearch import Elasticsearch
+from elasticmonitor import helpers
 
 def collect_cpu_stats():
     times = psutil.cpu_times()
@@ -49,24 +50,24 @@ def collect_ram_stats():
 
     data = {
         "system_memory": {
-            "total":        bytes2human(system_memory.total),
-            "available":    bytes2human(system_memory.available),
+            "total":        helpers.bytes2human(system_memory.total),
+            "available":    helpers.bytes2human(system_memory.available),
             "percent":      system_memory.percent,
-            "used":         bytes2human(system_memory.used),
-            "free":         bytes2human(system_memory.free),
-            "active":       bytes2human(system_memory.active),
-            "inactive":     bytes2human(system_memory.inactive),
-            "buffers":      bytes2human(system_memory.buffers),
-            "cached":       bytes2human(system_memory.cached)
+            "used":         helpers.bytes2human(system_memory.used),
+            "free":         helpers.bytes2human(system_memory.free),
+            "active":       helpers.bytes2human(system_memory.active),
+            "inactive":     helpers.bytes2human(system_memory.inactive),
+            "buffers":      helpers.bytes2human(system_memory.buffers),
+            "cached":       helpers.bytes2human(system_memory.cached)
         },
 
         "swap_memory": {
-            "total":    bytes2human(swap_memory.total),
-            "used":     bytes2human(swap_memory.used),
-            "free":     bytes2human(swap_memory.free),
+            "total":    helpers.bytes2human(swap_memory.total),
+            "used":     helpers.bytes2human(swap_memory.used),
+            "free":     helpers.bytes2human(swap_memory.free),
             "percent":  swap_memory.percent,
-            "sin":      bytes2human(swap_memory.sin),
-            "sout":     bytes2human(swap_memory.sout)
+            "sin":      helpers.bytes2human(swap_memory.sin),
+            "sout":     helpers.bytes2human(swap_memory.sout)
         }
     }
 
@@ -82,9 +83,9 @@ def collect_dsk_stats():
         disks.append({
             partition.device: {
                 partition.mountpoint: {
-                        "total":    bytes2human(usage.total),
-                        "used":     bytes2human(usage.used),
-                        "free":     bytes2human(usage.free),
+                        "total":    helpers.bytes2human(usage.total),
+                        "used":     helpers.bytes2human(usage.used),
+                        "free":     helpers.bytes2human(usage.free),
                         "percent":  usage.percent
                     }
                 }
@@ -94,24 +95,7 @@ def collect_dsk_stats():
 
 def push_to_es(server, data, id):
     es = Elasticsearch([{'host': server['Host'], 'port': server['Port']}])
-    es.indices.create(server['Index'], ignore=400)
     return es.index(index=server['Index'], doc_type=server['DocType'], id=id, body=data)
-
-def bytes2human(n):
-    # http://code.activestate.com/recipes/578019
-    # >>> bytes2human(10000)
-    # '9.8K'
-    # >>> bytes2human(100001221)
-    # '95.4M'
-    symbols = ('K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y')
-    prefix = {}
-    for i, s in enumerate(symbols):
-        prefix[s] = 1 << (i + 1) * 10
-    for s in reversed(symbols):
-        if n >= prefix[s]:
-            value = float(n) / prefix[s]
-            return '%.1f%s' % (value, s)
-    return "%sB" % n
 
 def go(configuration):
     with open(configuration) as fd:

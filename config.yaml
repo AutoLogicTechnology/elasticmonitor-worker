@@ -2,5 +2,5 @@
 ElasticSearch:
     Host: 10.8.200.40
     Port: 9200
-    Index: stats2es
-    DocType: stats2es_stat
+    Index: elasticmonitor
+    DocType: statistic

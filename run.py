@@ -1,2 +1,4 @@
-from stats2es import stats2es
-stats2es.go('./config.yaml')
+
+from elasticmonitor import worker
+
+worker.go('./config.yaml')
