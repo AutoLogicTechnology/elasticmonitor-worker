@@ -2,5 +2,5 @@ PyYAML==3.11
 argparse==1.2.1
 elasticsearch==1.0.0
 psutil==2.1.1
-urllib3==1.8.3
+urllib3==1.26.5
 wsgiref==0.1.2
